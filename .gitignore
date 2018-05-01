@@ -1,0 +1,5 @@
+exit
+.idea
+cmake-build-debug/flowers
+cmake-build-debug/CMakeFiles
+files/*
