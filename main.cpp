@@ -21,9 +21,11 @@ const char *choices[] = {
         "Save assortment to text file",
         "Read assortment from text file (read-only)",
         "Add transaction",
-        "View transactions",
+        "View all transactions",
         "Save transactions to file",
         "Load transactions from file",
+        "View transactions for a week",
+        "View transactions by flower name or color",
         "Exit",
         (char *)nullptr,
 };
@@ -36,6 +38,8 @@ template<class Item>void read(Item *item);
 void save_assortment_text(Assortment *assortment);
 void read_assortment_text();
 void add_transaction(Assortment *assortment, Balance *balance);
+void filter_transactions_by_date(Balance *balance);
+void filter_transactions_by_text(Balance *balance);
 char *get_filename_with_menu(str suffix, bool with_new_file = false);
 
 
@@ -113,6 +117,12 @@ int main() {
                         read<Balance>(&balance);
                         break;
                     case 10:
+                        filter_transactions_by_date(&balance);
+                        break;
+                    case 11:
+                        filter_transactions_by_text(&balance);
+                        break;
+                    case 12:
                         exit = true;
                         break;
                 }
@@ -381,6 +391,43 @@ void add_transaction(Assortment *assortment, Balance *balance) {
         clrtobot();
         balance->append(transaction);
     }
+}
+
+
+void filter_transactions_by_date(Balance *balance) {
+    char year_str[MAX_INPUT], week_str[MAX_INPUT];
+
+    move(15, 0);
+    clrtobot();
+    echo();
+    printw("Enter the year (%d - %d): ", MIN_YEAR, MAX_YEAR);
+    flushinp();
+    getstr(year_str);
+
+    printw("Enter the week of the year (1 - 53): ");
+    flushinp();
+    getstr(week_str);
+    noecho();
+
+    int year = atoi(year_str);
+    int week = atoi(week_str);
+
+    balance->display(year, week);
+}
+
+
+void filter_transactions_by_text(Balance *balance) {
+    char text[MAX_INPUT];
+
+    move(15, 0);
+    clrtobot();
+    echo();
+    printw("Enter flower name or color: ");
+    flushinp();
+    getstr(text);
+    noecho();
+
+    balance->display(text);
 }
 
 
