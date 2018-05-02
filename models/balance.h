@@ -42,11 +42,9 @@ void Balance::display() {
     printw("\u2524");
     printw("\n");
 
-     int total_price = 0;
-    int len = get_length();
+    uint len = get_length();
     for (int i = 0; i < len; i++) {
         tr = (*this)[i];
-        total_price += *tr;
         Date d = tr->get_date();
         SaleEntity se = tr->get_se();
         char *flower_repr = se.repr();
@@ -65,7 +63,11 @@ void Balance::display() {
     printN("\u2500", 15);
     printw("\u2518");
     printw("\n");
-    printw("Total price: %.2f UAH\n", total_price / 100.0);
+
+    double total_price = sum<Transaction>(get_items(), len) / 100.0;
+    double average_price = average<Transaction>(get_items(), len) / 100.0;
+    printw("Total price: %.2f UAH\n", total_price);
+    printw("Average price: %.2f UAH\n", average_price);
 }
 
 

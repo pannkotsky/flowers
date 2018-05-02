@@ -11,13 +11,13 @@
 template<class Item>
 class Container {
     Item **items;
-    int length, capacity;
+    uint length, capacity;
 public:
     Container();
     ~Container();
     bool append(Item *se);
-    int get_length() { return length; }
-    // Item **get_items() { return items; }
+    uint get_length() { return length; }
+    Item **get_items() { return items; }
     Item *operator[](int index);
     void write_to_file(const char *filename);
     void read_from_file(const char *filename);

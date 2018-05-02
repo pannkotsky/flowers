@@ -39,7 +39,7 @@ void Assortment::display() {
     printw("\u2524");
     printw("\n");
 
-    int len = get_length();
+    uint len = get_length();
     for (int i = 0; i < len; i++) {
         se = (*this)[i];
         printw("\u2502 %-20s \u2502 %-10s \u2502 %6.2f \u2502\n", se->get_name(), se->get_color(), se->get_price() / 100.0);

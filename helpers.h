@@ -52,4 +52,22 @@ bool str_ends_with(str full_string, str ending) {
     return 0 == strncmp(full_string + str_len - ending_len, ending, ending_len);
 }
 
+
+template<class Anytype>
+int sum(Anytype *items[], uint size) {
+    int res = 0;
+    for (int i = 0; i < size; i++) {
+        res += *(items[i]);
+    }
+    return res;
+}
+
+
+template<class Anytype>
+int average(Anytype *items[], uint size) {
+    if (size == 0) return 0;
+    return sum<Anytype>(items, size) / size;
+}
+
+
 #endif //FLOWERS_HELPERS_H
