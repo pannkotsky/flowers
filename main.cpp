@@ -36,6 +36,7 @@ template<class Item>void read(Item *item);
 void save_assortment_text(Assortment *assortment);
 void read_assortment_text();
 void add_transaction(Assortment *assortment, Balance *balance);
+char *get_filename_with_menu(str suffix, bool with_new_file = false);
 
 
 int main() {
@@ -182,18 +183,9 @@ void view(Item *item) {
 
 template<class Item>
 void save(Item *item) {
-    // TODO: add file menu, append .dat to filename
-    char filename[MAX_INPUT];
-    move(15, 0);
-    clrtobot();
-    move(17, 0);
-    printw("Enter filename to save: ");
-    flushinp();
-    echo();
-    getstr(filename);
-    noecho();
-    auto filename_full = new char[strlen("files/") + strlen(filename) + 1];
-    sprintf(filename_full, "files/%s", filename);
+    char *filename_full = get_filename_with_menu(".dat", true);
+    if (filename_full == nullptr) return;
+
     try {
         item->write_to_file(filename_full);
         move(15, 0);
@@ -214,104 +206,9 @@ void save(Item *item) {
 
 template<class Item>
 void read(Item *item) {
-    move(15, 0);
-    clrtobot();
-    move(17, 0);
+    char *filename_full = get_filename_with_menu(".dat");
+    if (filename_full == nullptr) return;
 
-    DIR *dir;
-    struct dirent *ent;
-    str names[100];
-    int names_count = 0;
-    if ((dir = opendir("files")) != nullptr) {
-        while ((ent = readdir(dir)) != nullptr) {
-            str name = ent->d_name;
-            if (str_ends_with(name, ".dat")) {
-                names[names_count] = name;
-                names_count++;
-                if (names_count >= 100) {
-                    attron(COLOR_PAIR(2));
-                    printw("Too many files");
-                    attroff(COLOR_PAIR(2));
-                    break;
-                }
-            }
-        }
-        closedir(dir);
-    } else {
-        attron(COLOR_PAIR(2));
-        printw("Could not open files directory");
-        attroff(COLOR_PAIR(2));
-        return;
-    }
-
-    if (names_count == 0) {
-        attron(COLOR_PAIR(2));
-        printw("No data files found");
-        attroff(COLOR_PAIR(2));
-        return;
-    }
-
-    ITEM **file_items;
-    MENU *file_menu;
-    WINDOW *file_menu_win;
-
-    file_items = (ITEM **)calloc(names_count + 1, sizeof(ITEM *));
-    auto nms = new char*[names_count];
-
-    for (int i = 0; i < names_count; ++i) {
-        str name = names[i];
-        auto nm = new char[strlen(name) + 1];
-        strcpy(nm, name);
-        nms[i] = nm;
-        file_items[i] = new_item(nm, nm);
-    }
-
-    file_items[names_count] = new_item((char *)nullptr, (char *)nullptr);
-
-    file_menu = new_menu((ITEM **)file_items);
-    file_menu_win = newwin(names_count, COLS, 19, 0);
-    keypad(file_menu_win, TRUE);
-    set_menu_win(file_menu, file_menu_win);
-
-    /* Set menu option not to show the description */
-    menu_opts_off(file_menu, O_SHOWDESC);
-
-    printw("Choose filename");
-    refresh();
-
-    post_menu(file_menu);
-    wrefresh(file_menu_win);
-
-    str filename;
-    bool selected = false;
-
-    while(!selected) {
-        switch(wgetch(file_menu_win)) {
-            case KEY_DOWN:
-                menu_driver(file_menu, REQ_DOWN_ITEM);
-                break;
-            case KEY_UP:
-                menu_driver(file_menu, REQ_UP_ITEM);
-                break;
-            case 10:
-                filename = item_name(current_item(file_menu));
-                selected = true;
-                break;
-        }
-    }
-
-    move(17, 0);
-    clrtobot();
-
-    for (int i = 0; i <= names_count; ++i) {
-        free_item(file_items[i]);
-    }
-
-    unpost_menu(file_menu);
-    free_menu(file_menu);
-
-    auto filename_full = new char[strlen("files/") + strlen(filename) + 1];
-    sprintf(filename_full, "files/%s", filename);
     try {
         item->read_from_file(filename_full);
         move(15, 0);
@@ -327,26 +224,13 @@ void read(Item *item) {
         attroff(COLOR_PAIR(2));
     }
     delete[] filename_full;
-    for (int i = 0; i < names_count; ++i) {
-        delete[] nms[i];
-    }
-    delete[] nms;
 }
 
 
 void save_assortment_text(Assortment *assortment) {
-    // TODO: add file menu, append .txt to filename
-    char filename[MAX_INPUT];
-    move(15, 0);
-    clrtobot();
-    move(17, 0);
-    printw("Enter filename to save: ");
-    flushinp();
-    echo();
-    getstr(filename);
-    noecho();
-    auto filename_full = new char[strlen("files/") + strlen(filename) + 1];
-    sprintf(filename_full, "files/%s", filename);
+    char *filename_full = get_filename_with_menu(".txt", true);
+    if (filename_full == nullptr) return;
+
     try {
         assortment->write_to_file_text(filename_full);
         move(15, 0);
@@ -366,18 +250,9 @@ void save_assortment_text(Assortment *assortment) {
 
 
 void read_assortment_text() {
-    // TODO: add file menu
-    char filename[MAX_INPUT];
-    move(15, 0);
-    clrtobot();
-    move(17, 0);
-    printw("Enter filename to read from: ");
-    flushinp();
-    echo();
-    getstr(filename);
-    noecho();
-    auto filename_full = new char[strlen("files/") + strlen(filename) + 1];
-    sprintf(filename_full, "files/%s", filename);
+    char *filename_full = get_filename_with_menu(".txt");
+    if (filename_full == nullptr) return;
+
     FILE *in_file = fopen(filename_full, "r");
     if (in_file == nullptr) {
         attron(COLOR_PAIR(2));
@@ -392,7 +267,7 @@ void read_assortment_text() {
         }
         fclose(in_file);
     }
-    delete [] filename_full;
+    delete[] filename_full;
 }
 
 
@@ -506,4 +381,130 @@ void add_transaction(Assortment *assortment, Balance *balance) {
         clrtobot();
         balance->append(transaction);
     }
+}
+
+
+char *get_filename_with_menu(str suffix, bool with_new_file) {
+    move(15, 0);
+    clrtobot();
+    move(17, 0);
+
+    DIR *dir;
+    struct dirent *ent;
+    str names[100];
+    int names_count = 0;
+    if ((dir = opendir("files")) != nullptr) {
+        while ((ent = readdir(dir)) != nullptr) {
+            str name = ent->d_name;
+            if (str_ends_with(name, suffix)) {
+                names[names_count++] = name;
+                if (names_count >= 100) {
+                    attron(COLOR_PAIR(2));
+                    printw("Too many files");
+                    attroff(COLOR_PAIR(2));
+                    break;
+                }
+            }
+        }
+        closedir(dir);
+    } else {
+        attron(COLOR_PAIR(2));
+        printw("Could not open files directory");
+        attroff(COLOR_PAIR(2));
+        return nullptr;
+    }
+
+    if (with_new_file) {
+        names[names_count++] = "New file";
+    }
+
+    if (names_count == 0) {
+        attron(COLOR_PAIR(2));
+        printw("No data files found");
+        attroff(COLOR_PAIR(2));
+        return nullptr;
+    }
+
+    ITEM **file_items;
+    MENU *file_menu;
+    WINDOW *file_menu_win;
+
+    file_items = (ITEM **)calloc(names_count + 1, sizeof(ITEM *));
+    auto nms = new char*[names_count];
+
+    for (int i = 0; i < names_count; ++i) {
+        str name = names[i];
+        auto nm = new char[strlen(name) + 1];
+        strcpy(nm, name);
+        nms[i] = nm;
+        file_items[i] = new_item(nm, nm);
+    }
+
+    file_items[names_count] = new_item((char *)nullptr, (char *)nullptr);
+
+    file_menu = new_menu((ITEM **)file_items);
+    file_menu_win = newwin(names_count, COLS, 19, 0);
+    keypad(file_menu_win, TRUE);
+    set_menu_win(file_menu, file_menu_win);
+
+    /* Set menu option not to show the description */
+    menu_opts_off(file_menu, O_SHOWDESC);
+
+    printw("Choose filename");
+    refresh();
+
+    post_menu(file_menu);
+    wrefresh(file_menu_win);
+
+    str filename;
+    bool selected = false;
+
+    while(!selected) {
+        switch(wgetch(file_menu_win)) {
+            case KEY_DOWN:
+                menu_driver(file_menu, REQ_DOWN_ITEM);
+                break;
+            case KEY_UP:
+                menu_driver(file_menu, REQ_UP_ITEM);
+                break;
+            case 10:
+                filename = item_name(current_item(file_menu));
+                selected = true;
+                break;
+        }
+    }
+
+    move(17, 0);
+    clrtobot();
+
+    for (int i = 0; i <= names_count; ++i) {
+        free_item(file_items[i]);
+    }
+
+    unpost_menu(file_menu);
+    free_menu(file_menu);
+
+    if (with_new_file && strcmp(filename, "New file") == 0) {
+        char new_filename[MAX_INPUT];
+        move(15, 0);
+        clrtobot();
+        move(17, 0);
+        printw("Enter filename for new file: ");
+        flushinp();
+        echo();
+        getstr(new_filename);
+        noecho();
+        strcat(new_filename, suffix);
+        filename = new_filename;
+    }
+
+    auto filename_full = new char[strlen("files/") + strlen(filename) + 1];
+    sprintf(filename_full, "files/%s", filename);
+
+    for (int i = 0; i < names_count; ++i) {
+        delete[] nms[i];
+    }
+    delete[] nms;
+
+    return filename_full;
 }
