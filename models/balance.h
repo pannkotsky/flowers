@@ -115,6 +115,7 @@ void Balance::_display(Transaction **items) {
 
     double total_price = sum<Transaction>(items, filtered_len) / 100.0;
     double average_price = average<Transaction>(items, filtered_len) / 100.0;
+    printw("Total number of transactions: %d\n", filtered_len);
     printw("Total price: %.2f UAH\n", total_price);
     printw("Average price: %.2f UAH\n", average_price);
 }
