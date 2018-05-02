@@ -23,6 +23,8 @@ public:
     static Flower *create_safe(str nm, str col);
     char *get_name() { return name; }
     char *get_color() { return color; }
+    void set_name(str new_name);
+    void set_color(str new_color);
     void display();
     char *repr();
 };
@@ -48,10 +50,8 @@ void Flower::check_color(str col) {
 
 
 Flower::Flower(str nm, str col) {
-    check_name(nm);
-    check_color(col);
-    sprintf(name, "%s", nm);
-    sprintf(color, "%s", col);
+    set_name(nm);
+    set_color(col);
 }
 
 
@@ -62,6 +62,20 @@ Flower *Flower::create_safe(str nm, str col) {
         printw("Couldn't create Flower: %s", e.what());
         return nullptr;
     }
+}
+
+
+void Flower::set_name(str new_name) {
+    check_name(new_name);
+    strncpy(name, new_name, strlen(new_name));
+    name[strlen(new_name)] = '\0';
+}
+
+
+void Flower::set_color(str new_color) {
+    check_color(new_color);
+    strncpy(color, new_color, strlen(new_color));
+    color[strlen(new_color)] = '\0';
 }
 
 

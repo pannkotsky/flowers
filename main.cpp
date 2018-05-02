@@ -20,6 +20,7 @@ const char *choices[] = {
         "Load assortment from binary file",
         "Save assortment to text file",
         "Read assortment from text file (read-only)",
+        "Edit flower",
         "Add transaction",
         "View all transactions",
         "Save transactions to file",
@@ -37,10 +38,12 @@ template<class Item>void save(Item *item);
 template<class Item>void read(Item *item);
 void save_assortment_text(Assortment *assortment);
 void read_assortment_text();
+void edit_sale_entity(Assortment *assortment);
 void add_transaction(Assortment *assortment, Balance *balance);
 void filter_transactions_by_date(Balance *balance);
 void filter_transactions_by_text(Balance *balance);
 char *get_filename_with_menu(str suffix, bool with_new_file = false);
+int get_se_index_with_menu(Assortment *assortment);
 
 
 int main() {
@@ -105,24 +108,27 @@ int main() {
                         read_assortment_text();
                         break;
                     case 6:
-                        add_transaction(&assortment, &balance);
+                        edit_sale_entity(&assortment);
                         break;
                     case 7:
-                        view<Balance>(&balance);
+                        add_transaction(&assortment, &balance);
                         break;
                     case 8:
-                        save<Balance>(&balance);
+                        view<Balance>(&balance);
                         break;
                     case 9:
-                        read<Balance>(&balance);
+                        save<Balance>(&balance);
                         break;
                     case 10:
-                        filter_transactions_by_date(&balance);
+                        read<Balance>(&balance);
                         break;
                     case 11:
-                        filter_transactions_by_text(&balance);
+                        filter_transactions_by_date(&balance);
                         break;
                     case 12:
+                        filter_transactions_by_text(&balance);
+                        break;
+                    case 13:
                         exit = true;
                         break;
                 }
@@ -179,6 +185,62 @@ void add_sale_entity(Assortment *assortment) {
     attroff(COLOR_PAIR(1));
     clrtobot();
     assortment->append(se);
+}
+
+
+void edit_sale_entity(Assortment *assortment) {
+    move(15, 0);
+    clrtobot();
+
+    int se_index = get_se_index_with_menu(assortment);
+    if (se_index == -1) return;
+
+    move(17, 0);
+    clrtobot();
+    SaleEntity *se = (*assortment)[se_index];
+    char new_name[MAX_INPUT], col_nm[MAX_INPUT], price_str[MAX_INPUT];
+
+    echo();
+
+    printw("Enter the new flower name (%d to %d characters long), leave empty to keep unchanged: ",
+           MIN_FLOWER_NAME, MAX_FLOWER_NAME);
+    flushinp();
+    getstr(new_name);
+
+    printw("Enter the color (options: ");
+    printArr(ACCEPTED_COLORS, ARRAY_SIZE(ACCEPTED_COLORS));
+    printw("), leave empty to keep unchanged: ");
+    flushinp();
+    getstr(col_nm);
+
+    printw("Enter the new price (in kopecks, max %d), leave empty to keep unchanged: ", MAX_PRICE);
+    flushinp();
+    getstr(price_str);
+
+    noecho();
+
+    int new_price = atoi(price_str);
+
+    try {
+
+        if (strlen(new_name) > 0) se->set_name(new_name);
+        if (strlen(col_nm) > 0) se->set_color(col_nm);
+        if (new_price > 0) se->set_price(new_price);
+
+        move(15, 0);
+        attron(COLOR_PAIR(1));
+        printw("Flower edited successfully: ");
+        se->display();
+        attroff(COLOR_PAIR(1));
+        clrtobot();
+
+    } catch (const std::invalid_argument &e) {
+        move(15, 0);
+        clrtobot();
+        attron(COLOR_PAIR(2));
+        printw(e.what());
+        attroff(COLOR_PAIR(2));
+    }
 }
 
 
@@ -291,69 +353,8 @@ void add_transaction(Assortment *assortment, Balance *balance) {
         move(17, 0);
         clrtobot();
 
-        int assortment_length = assortment->get_length();
-        if (assortment_length == 0) {
-            move(15, 0);
-            clrtobot();
-            printw("Assortment has no items, please add some");
-            break;
-        }
-
-        ITEM **se_items;
-        MENU *se_menu;
-        WINDOW *se_menu_win;
-
-        se_items = (ITEM **)calloc(assortment_length + 1, sizeof(ITEM *));
-
-        auto names = new char*[assortment_length];
-
-        for (int i = 0; i < assortment_length; ++i) {
-            SaleEntity *se = (*assortment)[i];
-            char *name = se->repr();
-            names[i] = name;
-            se_items[i] = new_item(name, name);
-        }
-        se_items[assortment_length] = new_item((char *)nullptr, (char *)nullptr);
-
-        se_menu = new_menu((ITEM **)se_items);
-        se_menu_win = newwin(assortment_length, COLS, 19, 0);
-        keypad(se_menu_win, TRUE);
-        set_menu_win(se_menu, se_menu_win);
-
-        /* Set menu option not to show the description */
-        menu_opts_off(se_menu, O_SHOWDESC);
-
-        printw("Choose flower");
-
-        post_menu(se_menu);
-        refresh();
-
-        int se_index = -1;
-
-        while(se_index == -1) {
-            switch(wgetch(se_menu_win)) {
-                case KEY_DOWN:
-                    menu_driver(se_menu, REQ_DOWN_ITEM);
-                    break;
-                case KEY_UP:
-                    menu_driver(se_menu, REQ_UP_ITEM);
-                    break;
-                case 10:
-                    se_index = item_index(current_item(se_menu));
-                    break;
-            }
-        }
-
-        move(17, 0);
-        clrtobot();
-        for (int i = 0; i < assortment_length; ++i) {
-            delete[] names[i];
-            free_item(se_items[i]);
-        }
-        delete[] names;
-
-        unpost_menu(se_menu);
-        free_menu(se_menu);
+        int se_index = get_se_index_with_menu(assortment);
+        if (se_index == -1) return;
 
         echo();
         printw("Enter the year (%d - %d): ", MIN_YEAR, MAX_YEAR);
@@ -382,15 +383,13 @@ void add_transaction(Assortment *assortment, Balance *balance) {
         attroff(COLOR_PAIR(2));
     }
 
-    if (transaction != nullptr) {
-        move(15, 0);
-        attron(COLOR_PAIR(1));
-        printw("Transaction created successfully: ");
-        transaction->display();
-        attroff(COLOR_PAIR(1));
-        clrtobot();
-        balance->append(transaction);
-    }
+    move(15, 0);
+    attron(COLOR_PAIR(1));
+    printw("Transaction created successfully: ");
+    transaction->display();
+    attroff(COLOR_PAIR(1));
+    clrtobot();
+    balance->append(transaction);
 }
 
 
@@ -554,4 +553,73 @@ char *get_filename_with_menu(str suffix, bool with_new_file) {
     delete[] nms;
 
     return filename_full;
+}
+
+
+int get_se_index_with_menu(Assortment *assortment) {
+    int assortment_length = assortment->get_length();
+    if (assortment_length == 0) {
+        move(15, 0);
+        clrtobot();
+        printw("Assortment has no items, please add some");
+        return -1;
+    }
+
+    ITEM **se_items;
+    MENU *se_menu;
+    WINDOW *se_menu_win;
+
+    se_items = (ITEM **)calloc(assortment_length + 1, sizeof(ITEM *));
+
+    auto names = new char*[assortment_length];
+
+    for (int i = 0; i < assortment_length; ++i) {
+        SaleEntity *se = (*assortment)[i];
+        char *name = se->repr();
+        names[i] = name;
+        se_items[i] = new_item(name, name);
+    }
+    se_items[assortment_length] = new_item((char *)nullptr, (char *)nullptr);
+
+    se_menu = new_menu((ITEM **)se_items);
+    se_menu_win = newwin(assortment_length, COLS, 19, 0);
+    keypad(se_menu_win, TRUE);
+    set_menu_win(se_menu, se_menu_win);
+
+    /* Set menu option not to show the description */
+    menu_opts_off(se_menu, O_SHOWDESC);
+
+    printw("Choose flower");
+
+    post_menu(se_menu);
+    refresh();
+
+    int se_index = -1;
+
+    while(se_index == -1) {
+        switch(wgetch(se_menu_win)) {
+            case KEY_DOWN:
+                menu_driver(se_menu, REQ_DOWN_ITEM);
+                break;
+            case KEY_UP:
+                menu_driver(se_menu, REQ_UP_ITEM);
+                break;
+            case 10:
+                se_index = item_index(current_item(se_menu));
+                break;
+        }
+    }
+
+    move(17, 0);
+    clrtobot();
+    for (int i = 0; i < assortment_length; ++i) {
+        delete[] names[i];
+        free_item(se_items[i]);
+    }
+    delete[] names;
+
+    unpost_menu(se_menu);
+    free_menu(se_menu);
+
+    return se_index;
 }
