@@ -3,7 +3,6 @@ project(flowers)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
 
